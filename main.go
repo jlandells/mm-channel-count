@@ -114,10 +114,11 @@ func GetUserIDFromUsername(mmClient model.Client4, username string) (*User, erro
 	return mmUser, nil
 }
 
-func GetChannelCountForTeam(mmClient model.Client4, teamID string, userID string) (int, error) {
+func GetChannelCountForTeam(mmClient model.Client4, teamID string, userID string, countDMs bool) (int, int, error) {
 	DebugPrint("Getting channel count for team ID: " + teamID)
 
-	channelCount := -1
+	channelCount := 0
+	dmChannelCount := 0
 	ctx := context.Background()
 	etag := ""
 
@@ -125,16 +126,24 @@ func GetChannelCountForTeam(mmClient model.Client4, teamID string, userID string
 
 	if err != nil {
 		LogMessage(errorLevel, "Failed to retrieve channels: "+err.Error())
-		return channelCount, err
+		return -1, -1, err
 	}
 	if response.StatusCode != 200 {
 		LogMessage(errorLevel, "Function call to GetChannelsForTeamForUser returned bad HTTP response")
-		return channelCount, errors.New("bad HTTP response")
+		return -1, -1, errors.New("bad HTTP response")
 	}
 
-	channelCount = len(channels)
+	for _, channel := range channels {
+		if channel.Type == "D" {
+			if countDMs {
+				dmChannelCount++
+			}
+		} else {
+			channelCount++
+		}
+	}
 
-	return channelCount, nil
+	return channelCount, dmChannelCount, nil
 }
 
 func GetTeamsForUser(mmClient model.Client4, userID string) ([]Team, error) {
@@ -168,7 +177,7 @@ func GetTeamsForUser(mmClient model.Client4, userID string) ([]Team, error) {
 	return teamsList, nil
 }
 
-func PrintSummary(user User) {
+func PrintSummary(user User, totalDMChannels int) {
 
 	totalChannelCount := 0
 
@@ -199,7 +208,8 @@ func PrintSummary(user User) {
 		totalChannelCount += team.ChannelCount
 	}
 
-	fmt.Printf("\nTotal channel count : %d\n\n", totalChannelCount)
+	fmt.Printf("\nDirect Message Channels : %d\n", totalDMChannels)
+	fmt.Printf("\nTotal channel count     : %d\n\n", totalChannelCount+totalDMChannels)
 }
 
 func main() {
@@ -321,13 +331,26 @@ func main() {
 	}
 
 	user.Teams = teams
+	var totalDMChannels int
+	firstTeam := true
 
 	for i := range teams {
-		teams[i].ChannelCount, err = GetChannelCountForTeam(*mmClient, teams[i].ID, user.ID)
+		var teamChannelCount, dmChannelCount int
+
+		// We only need to count the DMs for the first team, as they'll be common across all teams
+		// for a given user and Mattermost connection.
+		if firstTeam {
+			teamChannelCount, dmChannelCount, err = GetChannelCountForTeam(*mmClient, teams[i].ID, user.ID, true)
+			totalDMChannels = dmChannelCount
+			firstTeam = false
+		} else {
+			teamChannelCount, _, err = GetChannelCountForTeam(*mmClient, teams[i].ID, user.ID, false)
+		}
 		if err != nil {
 			LogMessage(warningLevel, "Failed to get channel count for team "+teams[i].Name)
 		}
+		teams[i].ChannelCount = teamChannelCount
 	}
 
-	PrintSummary(*user)
+	PrintSummary(*user, totalDMChannels)
 }
