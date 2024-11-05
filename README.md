@@ -14,7 +14,7 @@ Make sure to place the downloaded executable in your `PATH` or reference it dire
 To run `mm-channel-count`, you must specify the Mattermost server URL and API token, along with the username for which the channel count should be generated:
 
 ```bash
-mm-channel-count -url=https://mattermost.example.com -token=your_api_token -username=sample.user
+mm-channel-count -url=mattermost.example.com -scheme=https -port=443 -token=your_api_token -username=sample.user
 ```
 
 ### Command Line Parameters
@@ -25,7 +25,7 @@ mm-channel-count -url=https://mattermost.example.com -token=your_api_token -user
 | `-scheme` | `MM_SCHEME` | `http` / `https`. Defaults to `http`. |
 | `-port` | `MM_PORT` | The port used to reach the Mattermost instance. Defaults to `8065`. |
 | `-token` | `MM_TOKEN` | ***Required**. The API token used to access Mattermost. The user **must** have sysadmin rights. |
-| `-username` |  | ***Required**. The username for which the channel count should be generated. |
+| `-user` |  | ***Required**. The username for which the channel count should be generated. |
 | `-debug` | `MM_DEBUG` | Executes the application in debug mode, providing additional output. |
 | `-version` |  | Prints the current version and exits. |
 | `-help` |  | Displays usage instructions and exits. |
@@ -35,21 +35,21 @@ mm-channel-count -url=https://mattermost.example.com -token=your_api_token -user
 **Counting channels for a specific user:**
 
 ```bash
-mm-channel-count -url=https://mattermost.example.com -token=your_api_token -username=sample.user
+mm-channel-count -url=mattermost.example.com -token=your_api_token -user=sample.user
 ```
 
 **Using environment variables:**
 
 ```bash
-export MM_URL=https://mattermost.example.com
+export MM_URL=mattermost.example.com
 export MM_TOKEN=your_api_token
-mm-channel-count -username=sample.user
+mm-channel-count -user=sample.user
 ```
 
 **Enabling debug mode:**
 
 ```bash
-mm-channel-count -url=https://mattermost.example.com -token=your_api_token -username=sample.user -debug=true
+mm-channel-count -url=mattermost.example.com -token=your_api_token -user=sample.user -debug=true
 ```
 
 In all examples, command-line parameters will override corresponding environment variables.
